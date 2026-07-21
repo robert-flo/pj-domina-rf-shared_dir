@@ -125,6 +125,9 @@ rm -f "$STATE_DIR"/*
 PATH="$TEST_BIN:$PATH" DOCKER_LOG="$DOCKER_LOG" \
   make --no-print-directory docker-run > "$TEST_ROOT/run-output"
 
+grep -Fqx 'build --file Dockerfile --tag shared_dir:local .' "$DOCKER_LOG" || \
+  fail 'docker-run did not rebuild the local systemd image'
+
 grep -Eq '^run -d --name shared_dir-sandbox --privileged --cgroupns=host --volume /sys/fs/cgroup:/sys/fs/cgroup:rw shared_dir:local$' "$DOCKER_LOG" || \
   fail 'docker-run did not start a detached privileged systemd sandbox'
 
