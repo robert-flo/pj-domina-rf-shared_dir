@@ -108,16 +108,16 @@ Optional product-domain facts (fill from reading `{{NEW_PRODUCT_PATH}}`):
 Before editing, map the repo and the new product, then ask the user concise
 multiple-choice questions. Do not assume. Cover at least:
 
-1. Public product/command name and root filename  
-2. Depth: rename-only vs rebrand+prune dead scaffold vs surface-only  
-3. Distro support vs what the product actually supports  
-4. Docker purpose (none / smoke image / privileged systemd autolaunch)  
-5. Legacy artifact policy (delete vs stub)  
-6. Hooks/CI policy (generic shell gate vs product-specific)  
-7. Tests policy (delete old / smoke without privileges / full suite)  
-8. Changelog history (reset to `{{FIRST_VERSION}}` vs keep)  
-9. Docs language  
-10. Whether `{{NEW_PRODUCT_PATH}}` may be edited  
+1. Public product/command name and root filename
+2. Depth: rename-only vs rebrand+prune dead scaffold vs surface-only
+3. Distro support vs what the product actually supports
+4. Docker purpose (none / smoke image / privileged systemd autolaunch)
+5. Legacy artifact policy (delete vs stub)
+6. Hooks/CI policy (generic shell gate vs product-specific)
+7. Tests policy (delete old / smoke without privileges / full suite)
+8. Changelog history (reset to `{{FIRST_VERSION}}` vs keep)
+9. Docs language
+10. Whether `{{NEW_PRODUCT_PATH}}` may be edited
 
 Also discover by tools (do not ask what tools can answer):
 
@@ -647,10 +647,10 @@ Fix these proactively; they already burned real time on the template cutover:
 
 ## START COMMAND (once placeholders are filled)
 
-1. Read `AGENTS.md`, `RELEASE_POLICY.md`, this prompt’s Phase 0 requirements  
-2. Map repo + read `{{NEW_PRODUCT_PATH}}`  
-3. Run the Phase 0 interview  
-4. Execute Phases 1–9 in order without yielding a partial cutover as “done”  
-5. Stop only when the Acceptance Checklist is fully satisfied  
+1. Read `AGENTS.md`, `RELEASE_POLICY.md`, this prompt’s Phase 0 requirements
+2. Map repo + read `{{NEW_PRODUCT_PATH}}`
+3. Run the Phase 0 interview
+4. Execute Phases 1–9 in order without yielding a partial cutover as “done”
+5. Stop only when the Acceptance Checklist is fully satisfied
 
 End of prompt.
