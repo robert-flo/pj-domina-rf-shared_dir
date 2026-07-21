@@ -150,13 +150,13 @@ You do **not** need root, Docker, or network access for any script under
 
 `.github/workflows/ci.yml` job **Validate repository changes** runs, in order:
 
-1. whitespace check on the changed range  
-2. `bash -n` on changed shell scripts  
-3. `shellcheck -S warning shared_dir tests/*.sh …`  
-4. `bash tests/shared_dir.sh`  
-5. `bash tests/docker-make.sh`  
-6. `bash tests/git-make.sh`  
-7. `bash tests/changelog-automation.sh`  
+1. whitespace check on the changed range
+2. `bash -n` on changed shell scripts
+3. `shellcheck -S warning shared_dir tests/*.sh …`
+4. `bash tests/shared_dir.sh`
+5. `bash tests/docker-make.sh`
+6. `bash tests/git-make.sh`
+7. `bash tests/changelog-automation.sh`
 
 Triggers: pull requests to `master`, pushes to `master`, and manual
 `workflow_dispatch`. A separate job runs `pre-commit` on the whole tree.
