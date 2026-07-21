@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Add reusable product-adaptation agent prompt ([#6](https://github.com/robert-flo/shared_dir/pull/6)). <!-- changelog-pr:6 -->
+
+
 ## [0.1.0] - 2026-07-21
 
 ### Added
