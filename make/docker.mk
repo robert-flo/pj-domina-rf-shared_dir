@@ -40,9 +40,7 @@ docker-build: ## Build the local Docker image
 
 docker-run: ## Run shared_dir automatically in a privileged systemd sandbox
 	@command -v docker > /dev/null || { printf "$(RED)Docker is not installed$(NC)\n"; exit 1; }
-	@if ! docker image inspect "$(DOCKER_IMAGE)" > /dev/null 2>&1; then \
-		$(MAKE) --no-print-directory docker-build; \
-	fi
+	@$(MAKE) --no-print-directory docker-build
 	@if docker container inspect "$(DOCKER_CONTAINER)" > /dev/null 2>&1; then \
 		printf "$(YELLOW)Removing leftover sandbox container: $(DOCKER_CONTAINER)$(NC)\n"; \
 		docker rm -f "$(DOCKER_CONTAINER)" > /dev/null; \
