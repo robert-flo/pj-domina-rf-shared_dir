@@ -1,0 +1,6 @@
+# Local agent skills and runtime lockfile
+.agents/
+skills-lock.json
+
+# Dolphin/KDE folder metadata
+.directory

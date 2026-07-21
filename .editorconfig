@@ -1,0 +1,41 @@
+# EditorConfig helps developers define and maintain consistent
+# coding styles between different editors and IDEs.
+# https://editorconfig.org
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 2
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Go (gofmt requires tabs)
+[*.go]
+indent_style = tab
+indent_size = 4
+
+# Python and configurations
+[*.{ini,py,py.tpl,rst}]
+indent_size = 4
+indent_style = space
+
+# Rust
+[*.rs]
+indent_size = 4
+indent_style = space
+
+# Makefiles (require tabs)
+[Makefile]
+indent_style = tab
+indent_size = 4
+
+# Documentation (preserve markdown line breaks)
+[*.{md,mdx,diff}]
+trim_trailing_whitespace = false
+
+# Windows shell scripts (require CRLF)
+[*.{cmd,bat,ps1}]
+end_of_line = crlf

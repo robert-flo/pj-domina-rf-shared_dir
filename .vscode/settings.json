@@ -1,0 +1,16 @@
+{
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format",
+    "editor.formatOnSave": true
+  },
+
+  "shellformat.path": "shfmt",
+  "shellformat.flag": "-i 2 -sr -kp -ci",
+  "shellformat.effectLanguages": ["shellscript"],
+
+  "shellcheck.enable": true,
+  "shellcheck.run": "onType",
+  "shellcheck.executablePath": "/usr/bin/shellcheck",
+
+  "task.allowAutomaticTasks": "on"
+}
