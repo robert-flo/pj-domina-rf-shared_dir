@@ -1,0 +1,58 @@
+name: Validate pull request changelog
+
+on:
+  pull_request_target:
+    branches:
+      - master
+    types:
+      - opened
+      - reopened
+      - edited
+      - labeled
+      - unlabeled
+      - ready_for_review
+      - synchronize
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: pr-changelog-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate committed changelog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted validation from the base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: automation
+          persist-credentials: false
+
+      - name: Checkout pull request source branch without credentials
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: source
+          persist-credentials: false
+
+      - name: Read pull request labels
+        run: |
+          {
+            echo 'PR_LABELS<<EOF'
+            jq -r '.pull_request.labels[].name' "$GITHUB_EVENT_PATH"
+            echo EOF
+          } >> "$GITHUB_ENV"
+
+      - name: Validate committed changelog
+        env:
+          CHANGELOG_FILE: source/CHANGELOG.md
+          CHANGELOG_FAILURE_GUIDANCE: Generate the changelog locally and commit the result before requesting review.
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: automation/.github/scripts/validate-pr-changelog.sh

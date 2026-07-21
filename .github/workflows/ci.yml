@@ -1,0 +1,101 @@
+name: Validate master changes
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pre-commit:
+    name: Run Pre-Commit Hooks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run Pre-Commit Hooks
+        uses: pre-commit/action@v3.0.1
+
+  validate:
+    name: Validate repository changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine comparison base
+        id: range
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            base="$PR_BASE_SHA"
+          elif [[ "$EVENT_NAME" == "push" && ! "$BEFORE_SHA" =~ ^0+$ ]]; then
+            base="$BEFORE_SHA"
+          elif git rev-parse HEAD^ >/dev/null 2>&1; then
+            base="HEAD^"
+          else
+            base="$(git hash-object -t tree /dev/null)"
+          fi
+
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+
+      - name: Check whitespace errors
+        env:
+          BASE: ${{ steps.range.outputs.base }}
+        run: git diff --check "$BASE" HEAD
+
+      - name: Check changed shell scripts
+        shell: bash
+        env:
+          BASE: ${{ steps.range.outputs.base }}
+        run: |
+          while IFS= read -r -d '' file; do
+            [[ -f "$file" ]] || continue
+            first_line="$(head -n 1 "$file" || true)"
+
+            if [[ "$first_line" == *bash* || "$first_line" == "#!/bin/sh" ]]; then
+              echo "Checking $file"
+              bash -n "$file"
+            fi
+          done < <(git diff --name-only -z --diff-filter=ACMRT "$BASE" HEAD)
+
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install --yes shellcheck
+
+      - name: Lint shell scripts
+        shell: bash
+        run: shellcheck -S warning shared_dir tests/*.sh .vscode/shellcheck.sh .git-hooks/pre-commit
+
+      - name: Run shared_dir smoke tests
+        shell: bash
+        run: bash tests/shared_dir.sh
+
+      - name: Run Docker Make tests
+        shell: bash
+        run: bash tests/docker-make.sh
+
+      - name: Run Git Make tests
+        shell: bash
+        run: bash tests/git-make.sh
+
+      - name: Run changelog automation tests
+        shell: bash
+        run: bash tests/changelog-automation.sh

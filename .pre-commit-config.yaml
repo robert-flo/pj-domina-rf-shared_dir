@@ -1,0 +1,32 @@
+# pre-commit configuration
+#
+# How to install and activate:
+#   1. Install pre-commit:
+#      pip install pre-commit
+#      (Or using your package manager, e.g., brew install pre-commit / nix-shell -p pre-commit)
+#
+#   2. Install the git hook:
+#      pre-commit install
+#
+#   3. (Optional) Run checks manually on all files:
+#      pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-json
+      - id: check-yaml
+      - id: check-toml
+      - id: check-xml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: ["--markdown-linebreak-ext=md,mdx"]
+
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.22.1
+    hooks:
+      - id: markdownlint-cli2-docker
