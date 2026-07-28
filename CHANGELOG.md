@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- Add multi-directory installer and watcher verifier ([#13](https://github.com/robert-flo/shared_dir/pull/13)). <!-- changelog-pr:13 -->
+
 - Add reusable product-adaptation agent prompt ([#6](https://github.com/robert-flo/shared_dir/pull/6)). <!-- changelog-pr:6 -->
 
 

@@ -27,7 +27,7 @@ and test improvements are all welcome.
    bash tests/docker-make.sh
    bash tests/git-make.sh
    bash tests/changelog-automation.sh
-   shellcheck -S warning shared_dir tests/*.sh .vscode/shellcheck.sh
+   shellcheck -S warning shared_dir helper/*.sh scripts/*.sh tests/*.sh .vscode/shellcheck.sh
    ```
 
 4. Commit atomically using the

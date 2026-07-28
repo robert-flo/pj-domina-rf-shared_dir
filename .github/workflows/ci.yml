@@ -82,7 +82,7 @@ jobs:
 
       - name: Lint shell scripts
         shell: bash
-        run: shellcheck -S warning shared_dir tests/*.sh .vscode/shellcheck.sh .git-hooks/pre-commit
+        run: shellcheck -S warning shared_dir helper/*.sh scripts/*.sh tests/*.sh .vscode/shellcheck.sh .git-hooks/pre-commit
 
       - name: Run shared_dir smoke tests
         shell: bash
