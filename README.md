@@ -38,7 +38,6 @@ cd shared_dir
 sudo ./shared_dir
 ```
 
-When prompted, accept the default path `/wt` or enter another **absolute** path.
 The script then:
 
 1. Verifies root and that group `wheel` exists
@@ -50,6 +49,37 @@ The script then:
 
 Service names are derived from the directory basename
 (for `/wt` → `wt-perms.service` / `wt-perms.timer`).
+
+### Usage
+
+```shell
+sudo ./shared_dir [DIRECTORY ...]
+sudo ./shared_dir --help
+```
+
+`DIRECTORY` values must be absolute paths. With no directory arguments, the
+installer configures `/wt`. Each requested directory is configured in order
+with the same `wheel` permissions, ACLs, fix script, permission watcher, and
+backup timer.
+
+```shell
+# Configure the default shared directory: /wt
+sudo ./shared_dir
+
+# Configure one explicit shared directory
+sudo ./shared_dir /team-share
+
+# Configure several shared directories in one pass
+sudo ./shared_dir /wt /team-share /projects
+
+# See supported arguments and examples without changing the system
+./shared_dir --help
+# `-h` and `-help` are accepted aliases
+```
+
+The installer rejects relative paths and unknown options before it performs
+privileged configuration. If any requested directory cannot be configured, the
+command exits non-zero.
 
 ---
 

@@ -1,379 +1,62 @@
-#!/bin/bash
-# ============================================================
-# setup_shared_dir.sh
-# Creates a shared directory with full unrestricted access for
-# a given group. Robust, definitive solution with real-time
-# permission monitoring.
-# ============================================================
+#!/usr/bin/env bash
+#
+# shared_dir creates one or more group-shared directories on Arch Linux.
+#
+# Usage:
+#   sudo ./shared_dir
+#   sudo ./shared_dir /wt
+#   sudo ./shared_dir /wt /team-share /projects
+#   ./shared_dir --help
 
-set -euo pipefail
+set -Eeuo pipefail
 
-GROUP="wheel"
-SCRIPT_NAME="fix_shared_dir_perms.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/helper/common.sh"
+source "$SCRIPT_DIR/scripts/configure_shared_directory.sh"
 
-# ============================================================
-# ASK FOR THE DIRECTORY PATH TO CREATE/CONFIGURE
-# ============================================================
+main() {
+  local -a directories=()
+  local directory
 
-DEFAULT_DIR="/wt"
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -h|--help|-help)
+        usage
+        exit 0
+        ;;
+      --)
+        shift
+        directories+=("$@")
+        break
+        ;;
+      -*)
+        error "Invalid option: $1"
+        usage >&2
+        exit 1
+        ;;
+      *)
+        directories+=("$1")
+        ;;
+    esac
+    shift
+  done
 
-read -rp "Path of the directory to create/configure [$DEFAULT_DIR]: " INPUT_DIR
-INPUT_DIR="${INPUT_DIR:-$DEFAULT_DIR}"
+  if [[ ${#directories[@]} -eq 0 ]]; then
+    directories=("$DEFAULT_DIR")
+  fi
 
-# Must be an absolute path
-if [[ "$INPUT_DIR" != /* ]]; then
-    echo "The path must be absolute (start with /). Example: /wt" >&2
-    exit 1
-fi
+  for directory in "${directories[@]}"; do
+    normalize_shared_directory "$directory" >/dev/null
+  done
 
-# Normalize (strips "..", "//", etc.) without requiring it to exist yet
-SHARED_DIR="$(realpath -m -- "$INPUT_DIR")"
+  trap report_failure EXIT
+  require_root
+  require_share_group
+  ensure_dependencies
 
-# Service name derived from the basename of the path, in case the
-# script is run multiple times for different directories
-SANITIZED_NAME="$(basename "$SHARED_DIR" | tr -c 'a-zA-Z0-9-' '-' | sed 's/^-*//;s/-*$//')"
-SERVICE_NAME="${SANITIZED_NAME:-shared}-perms"
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m'
-
-info()  { echo -e "${GREEN}[INFO]${NC} $1"; }
-warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
-step()  { echo -e "${BLUE}[STEP]${NC} $1"; }
-ok()    { echo -e "${CYAN}[OK]${NC} $1"; }
-
-# Cleanup function in case of error
-cleanup() {
-    local exit_code=$?
-    if [[ $exit_code -ne 0 ]]; then
-        error "The script failed with exit code $exit_code."
-        error "Check the error messages above."
-    fi
+  for directory in "${directories[@]}"; do
+    configure_shared_directory "$(normalize_shared_directory "$directory")"
+  done
 }
-trap cleanup EXIT
 
-# ============================================================
-# PRE-FLIGHT CHECKS
-# ============================================================
-
-step "1/9 - Checking root permissions..."
-if [[ $EUID -ne 0 ]]; then
-    error "This script must be run as root."
-    error "Usage: sudo bash $0"
-    exit 1
-fi
-ok "Running as root."
-
-step "2/9 - Checking that group '$GROUP' exists..."
-if ! getent group "$GROUP" &>/dev/null; then
-    error "Group '$GROUP' does not exist on this system."
-    error "Create it first with: sudo groupadd $GROUP"
-    exit 1
-fi
-ok "Group '$GROUP' found."
-
-step "3/9 - Checking dependencies..."
-
-# Check and install acl
-if ! command -v setfacl &>/dev/null; then
-    info "Installing 'acl' package..."
-    if ! pacman -S --noconfirm acl 2>/dev/null; then
-        error "Could not install 'acl'. Check your connection and repositories."
-        exit 1
-    fi
-    ok "'acl' package installed."
-else
-    ok "'acl' package already installed."
-fi
-
-# Check and install inotify-tools
-if ! command -v inotifywait &>/dev/null; then
-    info "Installing 'inotify-tools' package..."
-    if ! pacman -S --noconfirm inotify-tools 2>/dev/null; then
-        error "Could not install 'inotify-tools'. Check your connection and repositories."
-        exit 1
-    fi
-    ok "'inotify-tools' package installed."
-else
-    ok "'inotify-tools' package already installed."
-fi
-
-# ============================================================
-# DIRECTORY CREATION AND CONFIGURATION
-# ============================================================
-
-step "4/9 - Creating directory $SHARED_DIR..."
-if [[ -d "$SHARED_DIR" ]]; then
-    warn "Directory $SHARED_DIR already exists."
-    warn "Existing files will be preserved and permissions will be updated."
-
-    # Backup of existing ACLs
-    if getfacl "$SHARED_DIR" &>/dev/null; then
-        BACKUP_FILE="/tmp/shared_dir_acl_backup_$(date +%Y%m%d_%H%M%S).txt"
-        getfacl -R "$SHARED_DIR" > "$BACKUP_FILE" 2>/dev/null || true
-        info "ACL backup saved to: $BACKUP_FILE"
-    fi
-else
-    if ! mkdir -p "$SHARED_DIR"; then
-        error "Could not create directory $SHARED_DIR."
-        exit 1
-    fi
-    ok "Directory $SHARED_DIR created."
-fi
-
-step "5/9 - Configuring owner and base permissions..."
-
-# Assign root:wheel ownership
-if ! chown root:"$GROUP" "$SHARED_DIR"; then
-    error "Could not change owner of $SHARED_DIR."
-    exit 1
-fi
-ok "Owner set to: root:$GROUP"
-
-# Permissions: 2770
-#   2 = SGID (new files inherit the wheel group)
-#   7 = rwx for owner (root)
-#   7 = rwx for group (wheel)
-#   0 = nothing for others
-# NO sticky bit, to allow deletion between group members
-if ! chmod 2770 "$SHARED_DIR"; then
-    error "Could not set permissions on $SHARED_DIR."
-    exit 1
-fi
-ok "Base permissions set: 2770 (SGID + rwx owner/group, no sticky bit)"
-
-step "6/9 - Applying ACLs for full access for group $GROUP..."
-
-# Clear previous ACLs to avoid conflicts
-setfacl -b "$SHARED_DIR" 2>/dev/null || true
-
-# ACL for existing files/folders (full access)
-if ! setfacl -R -m g:"$GROUP":rwx "$SHARED_DIR" 2>/dev/null; then
-    warn "No existing files to apply ACLs to, or there was a minor error."
-fi
-
-# Default ACL for new files/folders (full access)
-if ! setfacl -d -R -m g:"$GROUP":rwx "$SHARED_DIR"; then
-    error "Could not apply default ACLs."
-    exit 1
-fi
-ok "ACLs applied successfully."
-
-# Adjust existing files
-file_count=$(find "$SHARED_DIR" -mindepth 1 2>/dev/null | wc -l)
-if [[ $file_count -gt 0 ]]; then
-    info "Adjusting $file_count existing files/folders..."
-    find "$SHARED_DIR" -exec chown :"$GROUP" {} + 2>/dev/null || true
-    find "$SHARED_DIR" -type f -exec chmod g+rwx {} + 2>/dev/null || true
-    find "$SHARED_DIR" -type d -exec chmod g+rwxs {} + 2>/dev/null || true
-    ok "Existing files adjusted."
-fi
-
-# ============================================================
-# CREATE THE PERMISSION-FIX SCRIPT
-# ============================================================
-
-step "7/9 - Creating permission-fix script..."
-
-FIX_SCRIPT="/usr/local/bin/$SCRIPT_NAME"
-
-# Write the fix script line by line to avoid heredoc issues
-{
-    echo '#!/bin/bash'
-    echo "# $SCRIPT_NAME"
-    echo "# Fixes file permissions in $SHARED_DIR for full access for group $GROUP"
-    echo ''
-    echo "SHARED_DIR=\"$SHARED_DIR\""
-    echo "GROUP=\"$GROUP\""
-    echo ''
-    echo '# Fix the group of anything that is not wheel'
-    echo 'find "$SHARED_DIR" ! -group "$GROUP" -exec chown :"$GROUP" {} + 2>/dev/null'
-    echo ''
-    echo '# Files: group can read, write, and execute'
-    echo 'find "$SHARED_DIR" -type f ! -perm -g=rwx -exec chmod g+rwx {} + 2>/dev/null'
-    echo ''
-    echo '# Folders: group can do everything + inherited SGID'
-    echo 'find "$SHARED_DIR" -type d ! -perm -g=rwxs -exec chmod g+rwxs {} + 2>/dev/null'
-    echo ''
-    echo '# Default ACLs for everything new'
-    echo 'setfacl -d -R -m g:"$GROUP":rwx "$SHARED_DIR" 2>/dev/null'
-} > "$FIX_SCRIPT"
-
-chmod +x "$FIX_SCRIPT"
-ok "Fix script created at $FIX_SCRIPT"
-
-# Run the fix once now to make sure everything is in order
-bash "$FIX_SCRIPT"
-ok "Permissions fixed on initial run."
-
-# ============================================================
-# CREATE SYSTEMD SERVICE WITH INOTIFY (REACTIVE, REAL-TIME)
-# ============================================================
-
-step "8/9 - Creating real-time monitoring systemd service..."
-
-# Create the watcher script that the service will run
-WATCHER_SCRIPT="/usr/local/bin/${SERVICE_NAME}_watcher.sh"
-
-{
-    echo '#!/bin/bash'
-    echo "# ${SERVICE_NAME}_watcher.sh"
-    echo "# Script executed by the systemd service to monitor $SHARED_DIR"
-    echo ''
-    echo "SHARED_DIR=\"$SHARED_DIR\""
-    echo ''
-    echo '# Initial fix'
-    echo "$FIX_SCRIPT"
-    echo ''
-    echo '# Monitor changes in real time'
-    echo 'while true; do'
-    echo '    inotifywait -r -e create,modify,move,attrib --exclude ".git" "$SHARED_DIR" 2>/dev/null || true'
-    echo '    sleep 0.1'
-    echo "    $FIX_SCRIPT"
-    echo 'done'
-} > "$WATCHER_SCRIPT"
-
-chmod +x "$WATCHER_SCRIPT"
-ok "Watcher script created at $WATCHER_SCRIPT"
-
-# Create the systemd service file
-SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
-
-{
-    echo '[Unit]'
-    echo "Description=Monitors $SHARED_DIR and fixes permissions in real time"
-    echo 'After=local-fs.target'
-    echo ''
-    echo '[Service]'
-    echo 'Type=simple'
-    echo "ExecStart=$WATCHER_SCRIPT"
-    echo 'Restart=always'
-    echo 'RestartSec=5'
-    echo ''
-    echo '[Install]'
-    echo 'WantedBy=multi-user.target'
-} > "$SERVICE_FILE"
-
-ok "Systemd service created: ${SERVICE_NAME}.service"
-
-# Create the backup timer
-TIMER_FILE="/etc/systemd/system/${SERVICE_NAME}.timer"
-
-{
-    echo '[Unit]'
-    echo "Description=Fixes permissions on $SHARED_DIR every 30 seconds (backup)"
-    echo ''
-    echo '[Timer]'
-    echo 'OnBootSec=10'
-    echo 'OnUnitActiveSec=30s'
-    echo 'AccuracySec=1s'
-    echo ''
-    echo '[Install]'
-    echo 'WantedBy=timers.target'
-} > "$TIMER_FILE"
-
-ok "Systemd timer created: ${SERVICE_NAME}.timer"
-
-# Reload systemd
-systemctl daemon-reload
-
-# Stop previous services if they exist (in case the script is re-run)
-systemctl stop "${SERVICE_NAME}.service" 2>/dev/null || true
-systemctl stop "${SERVICE_NAME}.timer" 2>/dev/null || true
-
-# Enable and start the main service
-if ! systemctl enable --now "${SERVICE_NAME}.service"; then
-    error "Could not start service ${SERVICE_NAME}.service"
-    error "Check the logs with: journalctl -u ${SERVICE_NAME}.service"
-    exit 1
-fi
-ok "Service ${SERVICE_NAME}.service enabled and started."
-
-# Enable the backup timer
-if ! systemctl enable --now "${SERVICE_NAME}.timer"; then
-    warn "Could not start timer ${SERVICE_NAME}.timer"
-    warn "The main service should be sufficient."
-else
-    ok "Timer ${SERVICE_NAME}.timer enabled and started."
-fi
-
-# ============================================================
-# FINAL VERIFICATION
-# ============================================================
-
-step "9/9 - Verifying final configuration..."
-
-echo ""
-echo "========================================"
-echo "       CONFIGURATION VERIFICATION"
-echo "========================================"
-echo ""
-
-echo "--- Service status ---"
-systemctl status "${SERVICE_NAME}.service" --no-pager -l || true
-
-echo ""
-echo "--- Timer status ---"
-systemctl status "${SERVICE_NAME}.timer" --no-pager -l || true
-
-echo ""
-echo "--- Directory permissions ---"
-ls -ld "$SHARED_DIR"
-
-echo ""
-echo "--- Directory ACLs ---"
-getfacl "$SHARED_DIR"
-
-echo ""
-echo "--- Current members of group $GROUP ---"
-getent group "$GROUP"
-
-echo ""
-echo "========================================"
-echo "              FINAL SUMMARY"
-echo "========================================"
-echo ""
-echo "  Directory:            $SHARED_DIR"
-echo "  Group:                $GROUP"
-echo "  Base permissions:     2770 (SGID, no sticky bit)"
-echo "  Group access:         Read, write, execute FULL"
-echo "  Other access:         NONE"
-echo ""
-echo "  Active monitoring:"
-echo "    - inotify (real-time):  ${SERVICE_NAME}.service"
-echo "    - Timer (every 30s):    ${SERVICE_NAME}.timer"
-echo ""
-echo "  Any member of '$GROUP' can:"
-echo "      - Create files and folders"
-echo "      - Read other group members' files"
-echo "      - Modify other group members' files"
-echo "      - Delete other group members' files"
-echo "      - Execute other group members' scripts"
-echo ""
-echo "  New files automatically inherit:"
-echo "      - Group: $GROUP"
-echo "      - Permissions: g+rwx (fixed in real time)"
-echo ""
-echo "========================================"
-echo ""
-echo "To add users to group $GROUP:"
-echo "  sudo usermod -aG $GROUP <username>"
-echo ""
-echo "The added user's current group membership is cached until they"
-echo "start a new session. Either option works:"
-echo "  - Log out and log back in, or"
-echo "  - Run 'newgrp $GROUP' in their current terminal (only affects"
-echo "    that terminal, not the whole desktop session)."
-echo ""
-echo "Useful commands:"
-echo "  sudo systemctl status ${SERVICE_NAME}.service   # Check status"
-echo "  sudo systemctl restart ${SERVICE_NAME}.service  # Restart"
-echo "  sudo journalctl -u ${SERVICE_NAME}.service -f   # View logs"
-echo ""
-ok "Configuration completed successfully."
+main "$@"

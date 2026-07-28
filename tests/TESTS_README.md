@@ -34,7 +34,7 @@ bash tests/shared_dir.sh \
 Optional companion checks (also used in CI / CONTRIBUTING):
 
 ```bash
-shellcheck -S warning shared_dir tests/*.sh .vscode/shellcheck.sh .git-hooks/pre-commit
+shellcheck -S warning shared_dir helper/*.sh scripts/*.sh tests/*.sh .vscode/shellcheck.sh .git-hooks/pre-commit
 pre-commit run --all-files
 ```
 
@@ -152,7 +152,7 @@ You do **not** need root, Docker, or network access for any script under
 
 1. whitespace check on the changed range
 2. `bash -n` on changed shell scripts
-3. `shellcheck -S warning shared_dir tests/*.sh …`
+3. `shellcheck -S warning shared_dir helper/*.sh scripts/*.sh tests/*.sh …`
 4. `bash tests/shared_dir.sh`
 5. `bash tests/docker-make.sh`
 6. `bash tests/git-make.sh`
