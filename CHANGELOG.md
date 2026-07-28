@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## [0.2.0] - 2026-07-28
+
 ### Added
 
 - Add multi-directory installer and watcher verifier ([#13](https://github.com/robert-flo/shared_dir/pull/13)). <!-- changelog-pr:13 -->
