@@ -81,6 +81,16 @@ The installer rejects relative paths and unknown options before it performs
 privileged configuration. If any requested directory cannot be configured, the
 command exits non-zero.
 
+### Verify permission watchers
+
+Use the included verifier to confirm that each permission watcher repairs a
+controlled temporary file. It changes only its own marker files and removes
+them before returning a per-directory result and summary:
+
+```shell
+sudo ./scripts/verify_shared_dir_monitoring.sh /wt /team-share /projects
+```
+
 ---
 
 <br>
