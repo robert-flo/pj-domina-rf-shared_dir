@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## [0.3.0] - 2026-10-18
+
 ### Changed
 
 - feat: ✨ Change default shared directory from /wt to /z ([#3](https://github.com/robert-flo/pj-domina-rf-shared_dir/pull/3)). <!-- changelog-pr:3 -->
