@@ -2,6 +2,13 @@
 
 set -Eeuo pipefail
 
+# This suite must never run as root: the non-root refusal case would stop
+# being a refusal test and could mutate the real /z of the host.
+if ((EUID == 0)); then
+  printf 'FAIL: run this suite as a non-root user (as root it could touch the real /z)\n' >&2
+  exit 1
+fi
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SHARED_DIR_SRC="$ROOT_DIR/shared_dir"
 TEST_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/shared_dir-test.XXXXXX")"
@@ -155,7 +162,7 @@ require_output "$TEST_ROOT/help-short.out" 'Usage: shared_dir [OPTIONS] [DIRECTO
 
 # ── Non-root must refuse ───────────────────────────────────────
 non_root_status=0
-"$SHARED_DIR_SRC" /z > "$TEST_ROOT/non-root.out" 2>&1 || non_root_status=$?
+"$SHARED_DIR_SRC" "$TEST_ROOT/var/z" > "$TEST_ROOT/non-root.out" 2>&1 || non_root_status=$?
 ((non_root_status != 0)) || fail 'non-root invocation did not fail'
 require_output "$TEST_ROOT/non-root.out" 'This script must be run as root.'
 
