@@ -36,6 +36,6 @@ when inotify misses an event.
 _Avoid_: permission watcher
 
 **Source repository**:
-This GitHub repository (`robert-flo/PJ-DOMINA-rf-shared_dir`), which owns the installer,
+This GitHub repository (`robert-flo/pj-domina-rf-shared_dir`), which owns the installer,
 tests, Docker sandbox, and release history.
 _Avoid_: package repository (not used yet)
