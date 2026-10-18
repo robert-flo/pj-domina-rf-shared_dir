@@ -4,8 +4,8 @@
 # permission drift on a temporary marker created by this script.
 #
 # Examples:
-#   sudo ./scripts/verify_shared_dir_monitoring.sh /wt
-#   sudo ./scripts/verify_shared_dir_monitoring.sh /wt /team-share /projects
+#   sudo ./scripts/verify_shared_dir_monitoring.sh /z
+#   sudo ./scripts/verify_shared_dir_monitoring.sh /z /team-share /projects
 
 set -Eeuo pipefail
 
@@ -22,8 +22,8 @@ mode 0600, then wait for the permission watcher to restore group wheel and
 group rwx access. Markers are removed before exit.
 
 Examples:
-  sudo ./scripts/verify_shared_dir_monitoring.sh /wt
-  sudo ./scripts/verify_shared_dir_monitoring.sh /wt /team-share /projects
+  sudo ./scripts/verify_shared_dir_monitoring.sh /z
+  sudo ./scripts/verify_shared_dir_monitoring.sh /z /team-share /projects
   sudo ./scripts/verify_shared_dir_monitoring.sh --timeout 15 /projects
 EOF
 }

@@ -7,7 +7,7 @@ source repository.
 
 **Shared directory**:
 The absolute filesystem path configured for unrestricted in-group collaboration
-(default `/wt`).
+(default `/z`).
 _Avoid_: worktree root (unless that path is intentionally the shared directory)
 
 **Share group**:
