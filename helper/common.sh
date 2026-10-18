@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # shellcheck disable=SC2034 # consumed by the root entry point after sourcing
-DEFAULT_DIR="/wt"
+DEFAULT_DIR="/z"
 SHARE_GROUP="wheel"
 # shellcheck disable=SC2034 # consumed by the configuration operation after sourcing
 FIX_SCRIPT_NAME="fix_shared_dir_perms.sh"
@@ -24,7 +24,7 @@ usage() {
 Usage: shared_dir [OPTIONS] [DIRECTORY ...]
 
 Create and monitor one or more shared directories for the wheel group.
-With no DIRECTORY, the installer configures /wt.
+With no DIRECTORY, the installer configures /z.
 
 Options:
   -h, --help, -help  Show this help and exit.
@@ -34,8 +34,8 @@ ACLs for wheel, a permission watcher, and a 30-second backup timer.
 
 Examples:
   sudo ./shared_dir
-  sudo ./shared_dir /wt
-  sudo ./shared_dir /wt /team-share
+  sudo ./shared_dir /z
+  sudo ./shared_dir /z /team-share
 EOF
 }
 
@@ -43,7 +43,7 @@ normalize_shared_directory() {
   local input_dir=$1
 
   if [[ $input_dir != /* ]]; then
-    error "The path must be absolute (start with /). Example: /wt"
+    error "The path must be absolute (start with /). Example: /z"
     return 1
   fi
 

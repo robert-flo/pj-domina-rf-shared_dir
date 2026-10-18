@@ -5,7 +5,7 @@ in-group access. It sets SGID permissions and default ACLs, installs a fix-up
 script, and keeps permissions correct in real time with a systemd service
 (`inotify`) plus a backup timer.
 
-Default target directory: `/wt`. Default group: `wheel`.
+Default target directory: `/z`. Default group: `wheel`.
 
 ---
 
@@ -48,7 +48,7 @@ The script then:
 6. Installs and starts a per-directory systemd service and 30s backup timer
 
 Service names are derived from the directory basename
-(for `/wt` → `wt-perms.service` / `wt-perms.timer`).
+(for `/z` → `z-perms.service` / `z-perms.timer`).
 
 ### Usage
 
@@ -58,19 +58,19 @@ sudo ./shared_dir --help
 ```
 
 `DIRECTORY` values must be absolute paths. With no directory arguments, the
-installer configures `/wt`. Each requested directory is configured in order
+installer configures `/z`. Each requested directory is configured in order
 with the same `wheel` permissions, ACLs, fix script, permission watcher, and
 backup timer.
 
 ```shell
-# Configure the default shared directory: /wt
+# Configure the default shared directory: /z
 sudo ./shared_dir
 
 # Configure one explicit shared directory
 sudo ./shared_dir /team-share
 
 # Configure several shared directories in one pass
-sudo ./shared_dir /wt /team-share /projects
+sudo ./shared_dir /z /team-share /projects
 
 # See supported arguments and examples without changing the system
 ./shared_dir --help
@@ -88,7 +88,7 @@ controlled temporary file. It changes only its own marker files and removes
 them before returning a per-directory result and summary:
 
 ```shell
-sudo ./scripts/verify_shared_dir_monitoring.sh /wt /team-share /projects
+sudo ./scripts/verify_shared_dir_monitoring.sh /z /team-share /projects
 ```
 
 ---
@@ -150,12 +150,12 @@ sudo usermod -aG wheel <username>
 Group membership is cached until a new login session (or `newgrp wheel` in the
 current terminal).
 
-Useful service commands (example for `/wt`):
+Useful service commands (example for `/z`):
 
 ```shell
-sudo systemctl status wt-perms.service
-sudo systemctl restart wt-perms.service
-sudo journalctl -u wt-perms.service -f
+sudo systemctl status z-perms.service
+sudo systemctl restart z-perms.service
+sudo journalctl -u z-perms.service -f
 ```
 
 ---

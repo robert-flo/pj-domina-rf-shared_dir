@@ -4,8 +4,8 @@
 #
 # Usage:
 #   sudo ./shared_dir
-#   sudo ./shared_dir /wt
-#   sudo ./shared_dir /wt /team-share /projects
+#   sudo ./shared_dir /z
+#   sudo ./shared_dir /z /team-share /projects
 #   ./shared_dir --help
 
 set -Eeuo pipefail

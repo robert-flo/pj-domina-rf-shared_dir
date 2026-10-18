@@ -48,16 +48,22 @@ path = Path(sys.argv[1])
 fixture = sys.argv[2]
 replacements = {
     'if [[ $EUID -ne 0 ]]; then': 'if [[ 1 -eq 0 ]]; then',
-    'DEFAULT_DIR="/wt"': f'DEFAULT_DIR="{fixture}/var/default"',
+    'DEFAULT_DIR="/z"': f'DEFAULT_DIR="{fixture}/var/default"',
     '"/usr/local/bin/': f'"{fixture}/usr/local/bin/',
     '"/etc/systemd/system/': f'"{fixture}/etc/systemd/system/',
     '"/tmp/shared_dir_acl_backup_': f'"{fixture}/tmp/shared_dir_acl_backup_',
 }
+default_redirected = False
 for candidate in [path, *sorted((path.parent / 'helper').glob('*.sh')), *sorted((path.parent / 'scripts').glob('*.sh'))]:
     text = candidate.read_text()
+    if 'DEFAULT_DIR="/z"' in text:
+        default_redirected = True
     for old, new in replacements.items():
         text = text.replace(old, new)
     candidate.write_text(text)
+# Never let a smoke test fall through to the real default directory.
+if not default_redirected:
+    sys.exit('fixture did not redirect DEFAULT_DIR="/z"')
 PY
 
   cat > "$fixture/bin/getent" <<'EOF'
@@ -141,14 +147,15 @@ help_log="$TEST_ROOT/help.log"
 build_fixture "$help_fixture" "$help_log"
 run_with_path "$help_fixture" "$TEST_ROOT/help.out" --help || fail 'help failed'
 require_output "$TEST_ROOT/help.out" 'Usage: shared_dir [OPTIONS] [DIRECTORY ...]'
-require_output "$TEST_ROOT/help.out" 'sudo ./shared_dir /wt /team-share'
+require_output "$TEST_ROOT/help.out" 'sudo ./shared_dir /z /team-share'
+require_output "$TEST_ROOT/help.out" 'With no DIRECTORY, the installer configures /z.'
 [[ ! -s $help_log ]] || fail 'help triggered privileged commands'
 run_with_path "$help_fixture" "$TEST_ROOT/help-short.out" -help || fail '-help failed'
 require_output "$TEST_ROOT/help-short.out" 'Usage: shared_dir [OPTIONS] [DIRECTORY ...]'
 
 # ── Non-root must refuse ───────────────────────────────────────
 non_root_status=0
-"$SHARED_DIR_SRC" /wt > "$TEST_ROOT/non-root.out" 2>&1 || non_root_status=$?
+"$SHARED_DIR_SRC" /z > "$TEST_ROOT/non-root.out" 2>&1 || non_root_status=$?
 ((non_root_status != 0)) || fail 'non-root invocation did not fail'
 require_output "$TEST_ROOT/non-root.out" 'This script must be run as root.'
 
@@ -187,7 +194,7 @@ happy="$TEST_ROOT/happy"
 happy_log="$TEST_ROOT/happy.log"
 : > "$happy_log"
 build_fixture "$happy" "$happy_log"
-target_dir="$happy/var/wt"
+target_dir="$happy/var/z"
 
 run_with_path "$happy" "$TEST_ROOT/happy.out" "$target_dir" || \
   fail "happy path failed: $(cat "$TEST_ROOT/happy.out")"
@@ -196,26 +203,26 @@ require_output "$TEST_ROOT/happy.out" 'Configuration completed successfully.'
 require_output "$TEST_ROOT/happy.out" "Directory:            $target_dir"
 require_output "$TEST_ROOT/happy.out" 'Group:                wheel'
 require_output "$TEST_ROOT/happy.out" 'Base permissions:     2770 (SGID, no sticky bit)'
-require_output "$TEST_ROOT/happy.out" 'wt-perms.service'
-require_output "$TEST_ROOT/happy.out" 'wt-perms.timer'
+require_output "$TEST_ROOT/happy.out" 'z-perms.service'
+require_output "$TEST_ROOT/happy.out" 'z-perms.timer'
 
 require_file "$happy/usr/local/bin/fix_shared_dir_perms.sh"
-require_file "$happy/usr/local/bin/wt-perms_watcher.sh"
-require_file "$happy/etc/systemd/system/wt-perms.service"
-require_file "$happy/etc/systemd/system/wt-perms.timer"
+require_file "$happy/usr/local/bin/z-perms_watcher.sh"
+require_file "$happy/etc/systemd/system/z-perms.service"
+require_file "$happy/etc/systemd/system/z-perms.timer"
 [[ -d $target_dir ]] || fail 'shared directory was not created'
 
-grep -Fq 'fix_shared_dir_perms.sh' "$happy/usr/local/bin/wt-perms_watcher.sh" || \
+grep -Fq 'fix_shared_dir_perms.sh' "$happy/usr/local/bin/z-perms_watcher.sh" || \
   fail 'watcher does not invoke the fix script'
-grep -Fq "Description=Monitors $target_dir" "$happy/etc/systemd/system/wt-perms.service" || \
+grep -Fq "Description=Monitors $target_dir" "$happy/etc/systemd/system/z-perms.service" || \
   fail 'service unit missing directory description'
-grep -Fq 'OnUnitActiveSec=30s' "$happy/etc/systemd/system/wt-perms.timer" || \
+grep -Fq 'OnUnitActiveSec=30s' "$happy/etc/systemd/system/z-perms.timer" || \
   fail 'timer unit missing 30s interval'
 grep -Fq 'systemctl daemon-reload' "$happy_log" || \
   fail 'systemctl daemon-reload was not invoked'
-grep -Fq 'systemctl enable --now wt-perms.service' "$happy_log" || \
+grep -Fq 'systemctl enable --now z-perms.service' "$happy_log" || \
   fail 'service was not enabled'
-grep -Fq 'systemctl enable --now wt-perms.timer' "$happy_log" || \
+grep -Fq 'systemctl enable --now z-perms.timer' "$happy_log" || \
   fail 'timer was not enabled'
 grep -Fq 'pacman' "$happy_log" && fail 'smoke test invoked pacman' || true
 
