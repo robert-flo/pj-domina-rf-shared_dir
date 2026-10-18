@@ -33,8 +33,8 @@ Also required (normally present on a full Arch system):
 Clone the repository and run the installer:
 
 ```shell
-git clone https://github.com/robert-flo/shared_dir.git
-cd shared_dir
+git clone https://github.com/robert-flo/pj-domina-rf-shared_dir.git
+cd pj-domina-rf-shared_dir
 sudo ./shared_dir
 ```
 

@@ -5,12 +5,12 @@ and test improvements are all welcome.
 
 ## Getting started
 
-1. Fork [the repository](https://github.com/robert-flo/shared_dir)
+1. Fork [the repository](https://github.com/robert-flo/pj-domina-rf-shared_dir)
    and clone your fork:
 
    ```bash
-   git clone https://github.com/<your-user>/shared_dir.git
-   cd shared_dir
+   git clone https://github.com/<your-user>/pj-domina-rf-shared_dir.git
+   cd pj-domina-rf-shared_dir
    ```
 
 2. Create a focused branch from `master`:

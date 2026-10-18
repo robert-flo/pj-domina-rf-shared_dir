@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- docs: 📝 Update repository links to pj-domina-rf-shared_dir ([#1](https://github.com/robert-flo/pj-domina-rf-shared_dir/pull/1)). <!-- changelog-pr:1 -->
+
+
 ## [0.2.0] - 2026-07-28
 
 ### Added
